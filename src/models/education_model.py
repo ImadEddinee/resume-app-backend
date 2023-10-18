@@ -1,0 +1,13 @@
+from database import db
+from sqlalchemy import ForeignKey, Date
+
+
+class Education(db.Model):
+    __tablename__ = 'education'
+    id = db.Column(db.Integer, primary_key=True)
+    degreeTitle = db.Column(db.String(150))
+    institution = db.Column(db.String(150))
+    starting_year = db.Column(Date)
+    ongoing = db.Column(db.Integer)
+    graduating_year = db.Column(Date)
+    user_id = db.Column(db.Integer, ForeignKey('user.id'), nullable=False)

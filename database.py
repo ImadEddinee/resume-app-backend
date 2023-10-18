@@ -11,3 +11,4 @@ db_name = os.getenv('DB_NAME')
 protocol = os.getenv('PROTOCOL')
 
 db = SQLAlchemy()
+Base = db.Model
