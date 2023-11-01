@@ -1,5 +1,8 @@
 from flask import Flask
+from flask_cors import CORS
+
 from src.controllers.auth_controller import auth_controller
+from src.controllers.user_controller import user_controller
 from src.controllers.basic_info_controller import basic_info_controller
 from src.controllers.contact_controller import contact_controller
 from src.controllers.education_controller import education_controller
@@ -9,12 +12,14 @@ from src.controllers.language_controller import language_controller
 from database import db, protocol, db_host, db_name, db_user, db_password
 
 app = Flask(__name__)
+CORS(app)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = f"{protocol}://{db_user}:{db_password}@{db_host}/{db_name}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Registering various API endpoints
-app.register_blueprint(auth_controller, url_prefix="/api/v1/auth")
+app.register_blueprint(auth_controller, url_prefix="/api/v1/auth/")
+app.register_blueprint(user_controller, url_prefix="/api/v1/")
 app.register_blueprint(basic_info_controller, url_prefix="/api/v1/")
 app.register_blueprint(contact_controller, url_prefix="/api/v1/")
 app.register_blueprint(education_controller, url_prefix="/api/v1/")
