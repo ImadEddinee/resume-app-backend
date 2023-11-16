@@ -25,7 +25,7 @@ def get_user_experience(user_id):
         ]
         experience_info.append({
             "id": exp.id,
-            "jobTitle": exp.jobTitle,
+            "jobTitle": exp.job_title,
             "company": exp.company,
             "startingYear": exp.starting_year,
             "onGoing": exp.ongoing,

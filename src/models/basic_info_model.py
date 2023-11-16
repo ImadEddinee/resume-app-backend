@@ -11,5 +11,5 @@ class BasicInfo(db.Model):
     social_status = db.Column(db.String(150))
     occupation = db.Column(db.String(150))
     years_of_exp = db.Column(db.Integer)
-    birth_date = db.Column(Date)
+    birth_date = db.Column(db.String(150))
     user_id = db.Column(db.Integer, ForeignKey('user.id'), nullable=False)

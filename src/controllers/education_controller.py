@@ -13,7 +13,7 @@ def get_user_education(user_id):
     education_info = [
         {
             "id": education.id,
-            "degreeTitle": education.degreeTitle,
+            "degreeTitle": education.degree_title,
             "institution": education.institution,
             "startingYear": education.starting_year,
             "onGoing": education.ongoing,

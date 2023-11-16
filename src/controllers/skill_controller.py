@@ -19,7 +19,7 @@ def create_or_update_skill_details(skills, user_id):
     delete_all_skills_for_user(user_id)
     skill_objects = []
     for skill in skills:
-        skill_db = Skill(name=skill['name'], user_id=user_id)
+        skill_db = Skill(name=skill['content'], user_id=user_id)
         skill_objects.append(skill_db)
     db.session.add_all(skill_objects)
     db.session.commit()

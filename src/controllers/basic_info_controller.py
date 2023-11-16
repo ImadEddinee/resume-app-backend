@@ -16,7 +16,7 @@ def get_user_basic_info(user_id):
         "age": basic_info.age,
         "socialStatus": basic_info.social_status,
         "occupation": basic_info.occupation,
-        "yearsOfExperience": basic_info.years_of_exp,
+        "yearsOfExp": basic_info.years_of_exp,
         "birthDate": basic_info.birth_date,
         "userId": user_id,
     }
