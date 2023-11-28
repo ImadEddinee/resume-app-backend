@@ -10,18 +10,21 @@ education_controller = Blueprint('education_controller', __name__)
 @education_controller.route("users/<int:user_id>/educations")
 def get_user_education(user_id):
     educations = Education.query.filter_by(user_id=user_id).all()
-    education_info = [
-        {
-            "id": education.id,
-            "degreeTitle": education.degree_title,
-            "institution": education.institution,
-            "startingYear": education.starting_year,
-            "onGoing": education.ongoing,
-            "graduatingYear": education.graduating_year,
-            "userId": user_id,
-        }
-        for education in educations
-    ]
+    if not educations:
+        return {}
+    else:
+        education_info = [
+            {
+                "id": education.id,
+                "degreeTitle": education.degree_title,
+                "institution": education.institution,
+                "startingYear": education.starting_year,
+                "onGoing": education.ongoing,
+                "graduatingYear": education.graduating_year,
+                "userId": user_id,
+            }
+            for education in educations
+        ]
     return education_info
 
 

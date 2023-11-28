@@ -16,9 +16,11 @@ CORS(app)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = f"{protocol}://{db_user}:{db_password}@{db_host}/{db_name}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SECRET_KEY'] = 'PHhV7HLc7I7-UWdh'
+
 
 # Registering various API endpoints
-app.register_blueprint(auth_controller, url_prefix="/api/v1/auth/")
+app.register_blueprint(auth_controller, url_prefix="/api/v1/")
 app.register_blueprint(user_controller, url_prefix="/api/v1/")
 app.register_blueprint(basic_info_controller, url_prefix="/api/v1/")
 app.register_blueprint(contact_controller, url_prefix="/api/v1/")

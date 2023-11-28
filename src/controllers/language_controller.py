@@ -11,17 +11,20 @@ language_controller = Blueprint('language_controller', __name__)
 @language_controller.route("users/<int:user_id>/languages")
 def get_user_language(user_id):
     languages = Language.query.filter_by(user_id=user_id).all()
-    language_info = [
-        {
-            "id": language.id,
-            "language": language.language,
-            "speak": language.speak,
-            "read": language.read,
-            "write": language.write,
-            "userId": user_id,
-        }
-        for language in languages
-    ]
+    if not languages:
+        return {}
+    else:
+        language_info = [
+            {
+                "id": language.id,
+                "language": language.language,
+                "speak": language.speak,
+                "read": language.read,
+                "write": language.write,
+                "userId": user_id,
+            }
+            for language in languages
+        ]
     return language_info
 
 

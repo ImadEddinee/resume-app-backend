@@ -9,13 +9,16 @@ contact_controller = Blueprint('contact_controller', __name__)
 @contact_controller.route("users/<int:user_id>/contacts")
 def get_user_contact(user_id):
     contact = Contact.query.filter_by(user_id=user_id).first()
-    contact_info = {
-        "id": contact.id,
-        "address": contact.address,
-        "github": contact.github,
-        "linkedin": contact.linkedin,
-        "email": contact.email
-    }
+    if not contact:
+        return {}
+    else:
+        contact_info = {
+            "id": contact.id,
+            "address": contact.address,
+            "github": contact.github,
+            "linkedin": contact.linkedin,
+            "email": contact.email
+        }
     return contact_info
 
 

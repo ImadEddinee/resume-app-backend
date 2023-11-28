@@ -9,17 +9,20 @@ basic_info_controller = Blueprint('basic_info_controller', __name__)
 @basic_info_controller.route("users/<int:user_id>/basic-infos")
 def get_user_basic_info(user_id):
     basic_info = BasicInfo.query.filter_by(user_id=user_id).first()
-    basic_info_dict = {
-        "id": basic_info.id,
-        "firstName": basic_info.first_name,
-        "lastName": basic_info.last_name,
-        "age": basic_info.age,
-        "socialStatus": basic_info.social_status,
-        "occupation": basic_info.occupation,
-        "yearsOfExp": basic_info.years_of_exp,
-        "birthDate": basic_info.birth_date,
-        "userId": user_id,
-    }
+    if not basic_info:
+        return {}
+    else:
+        basic_info_dict = {
+            "id": basic_info.id,
+            "firstName": basic_info.first_name,
+            "lastName": basic_info.last_name,
+            "age": basic_info.age,
+            "socialStatus": basic_info.social_status,
+            "occupation": basic_info.occupation,
+            "yearsOfExp": basic_info.years_of_exp,
+            "birthDate": basic_info.birth_date,
+            "userId": user_id,
+        }
     return basic_info_dict
 
 

@@ -13,27 +13,30 @@ experience_controller = Blueprint('experience_controller', __name__)
 @experience_controller.route("users/<int:user_id>/experiences")
 def get_user_experience(user_id):
     experiences = Experience.query.filter_by(user_id=user_id).all()
-    experience_ids = [exp.id for exp in experiences]
-    experience_actions = (db.session.query(ExperienceAction)
+    if not experiences:
+        return {}
+    else:
+        experience_ids = [exp.id for exp in experiences]
+        experience_actions = (db.session.query(ExperienceAction)
                           .join(Experience, ExperienceAction.experience_id == Experience.id)
                           .filter(Experience.id.in_(experience_ids)).all())
-    experience_info = []
-    for exp in experiences:
-        additional_info = [
-            {"id": action.id, "content": action.action} for action in experience_actions if
-            action.experience_id == exp.id
-        ]
-        experience_info.append({
-            "id": exp.id,
-            "jobTitle": exp.job_title,
-            "company": exp.company,
-            "startingYear": exp.starting_year,
-            "onGoing": exp.ongoing,
-            "endingYear": exp.ending_year,
-            "role": exp.role,
-            "additionalInfo": additional_info,
-            "userId": user_id,
-        })
+        experience_info = []
+        for exp in experiences:
+            additional_info = [
+                {"id": action.id, "content": action.action} for action in experience_actions if
+                action.experience_id == exp.id
+            ]
+            experience_info.append({
+                "id": exp.id,
+                "jobTitle": exp.job_title,
+                "company": exp.company,
+                "startingYear": exp.starting_year,
+                "onGoing": exp.ongoing,
+                "endingYear": exp.ending_year,
+                "role": exp.role,
+                "additionalInfo": additional_info,
+                "userId": user_id,
+            })
     return experience_info
 
 

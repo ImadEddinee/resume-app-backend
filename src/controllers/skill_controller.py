@@ -10,7 +10,10 @@ skill_controller = Blueprint('skill_controller', __name__)
 @skill_controller.route("users/<int:user_id>/skills")
 def get_user_skills(user_id):
     skills = Skill.query.filter_by(user_id=user_id).all()
-    skills_info = [{"id": skill.id, "content": skill.name} for skill in skills]
+    if not skills:
+        return {}
+    else:
+        skills_info = [{"id": skill.id, "content": skill.name} for skill in skills]
     return skills_info
 
 
@@ -19,7 +22,7 @@ def create_or_update_skill_details(skills, user_id):
     delete_all_skills_for_user(user_id)
     skill_objects = []
     for skill in skills:
-        skill_db = Skill(name=skill['content'], user_id=user_id)
+        skill_db = Skill(name=skill['name'], user_id=user_id)
         skill_objects.append(skill_db)
     db.session.add_all(skill_objects)
     db.session.commit()
