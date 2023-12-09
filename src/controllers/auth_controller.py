@@ -1,32 +1,78 @@
+import random
+import string
+
+
+from database import db
 import jwt
-from flask import Blueprint, request, session, jsonify
-from datetime import datetime, timedelta  # Import datetime class directly
+from flask import Blueprint, request, session, jsonify, make_response
+from datetime import datetime, timedelta
 from functools import wraps
 from flask_bcrypt import generate_password_hash, check_password_hash
+from flask_jwt_extended import get_jwt_identity, jwt_required
+
 from src.models.user_model import User
+
 
 auth_controller = Blueprint('auth_controller', __name__)
 
 secret = "PHhV7HLc7I7-UWdh"
+refresh_secret = "RefreshSecretKey"  # Replace with your own secret key for refresh tokens
 
 
-def token_required(func):
+def auth_required(func):
     @wraps(func)
     def decorated(*args, **kwargs):
-        token = request.headers.get('token')
+        auth_header = request.headers.get('Authorization')
 
-        if not token:
+        if not auth_header:
             return jsonify({'error': 'Token is missing'}), 401
 
         try:
+            # Check if the header starts with "Bearer " and remove it
+            if auth_header.startswith('Bearer '):
+                token = auth_header[len('Bearer '):]
+            else:
+                token = auth_header
             data = jwt.decode(token, secret, algorithms=['HS256'])
 
-        except:
+        except jwt.ExpiredSignatureError:
+            return jsonify({'error': 'Token has expired'}), 401
+        except jwt.InvalidTokenError:
             return jsonify({'error': 'Token is invalid'}), 401
 
         return func(*args, **kwargs)
 
     return decorated
+
+def auth_refresh_required(func):
+    @wraps(func)
+    def decorated(*args, **kwargs):
+        auth_header = request.headers.get('Authorization')
+
+        if not auth_header:
+            return jsonify({'error': 'Refresh token is missing'}), 401
+
+        try:
+            # Check if the header starts with "Bearer " and remove it
+            if auth_header.startswith('Bearer '):
+                refresh_token = auth_header[len('Bearer '):]
+            else:
+                refresh_token = auth_header
+
+            # Decode the refresh token
+            data = jwt.decode(refresh_token, secret, algorithms=['HS256'])
+
+            # Add additional checks for the refresh token if needed
+
+        except jwt.ExpiredSignatureError:
+            return jsonify({'error': 'Refresh token has expired'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'error': 'Refresh token is invalid'}), 401
+
+        return func(*args, **kwargs)
+
+    return decorated
+
 
 
 @auth_controller.route("/public")
@@ -34,11 +80,46 @@ def public():
     return jsonify({'message': 'Anyone can view this'})
 
 
-@auth_controller.route("/auth", methods=["GET"])
-@token_required
+@auth_controller.route("/", methods=["GET"])
+@auth_required
 def private():
     return jsonify({'message': 'Only authorized users can view this'})
 
+
+@auth_controller.route('/info', methods=['GET'])
+@auth_required
+def login_info_api():
+    """
+    Get information about the currently logged in user
+    """
+    user = get_authenticated_user()
+
+    if user:
+        roles = [role.to_dict() for role in user.roles]
+        response_data = {
+            'username': user.username,
+            'enabled': user.enabled,
+            'roles': roles  # Assuming user.roles is a list of roles
+        }
+        return make_response(jsonify(response_data))
+    else:
+        # Handle the case where the user is not found or not enabled
+        return make_response(jsonify({'error': 'User not found or not enabled'}), 404)
+
+
+@jwt_required()
+def get_authenticated_user():
+    """
+    Get authentication token user identity and verify account is active
+    """
+    identity = get_jwt_identity()
+    user = User.query.filter_by(id=identity).first()
+
+    if user and user.enabled:
+        return user
+    else:
+        print("User not Found or not Enabled")
+        return None
 
 @auth_controller.route("/login", methods=["POST"])
 def login():
@@ -51,15 +132,56 @@ def login():
 
         if user:
             if check_password_hash(user.password, password):
-                session['logged_in'] = True
-                token = jwt.encode({
+                # Generate access token
+                access_token = jwt.encode({
+                    'sub': user.id,
                     'id': user.id,
                     'username': user.username,
                     'email': user.email,
                     'exp': datetime.now() + timedelta(days=2)
                 }, secret, algorithm='HS256')
-                return jsonify({'token': token})
+
+                # Generate refresh token
+                refresh_token = jwt.encode({
+                    'id': user.id,
+                    'exp': datetime.now() + timedelta(days=30)
+                }, refresh_secret, algorithm='HS256')
+
+                return jsonify({'accessToken': access_token, 'refreshToken': refresh_token})
             else:
                 return jsonify({'error': 'Invalid username or password'}), 401
         else:
             return jsonify({'error': 'Invalid username or password'}), 401
+
+
+@auth_controller.route("/refresh", methods=["POST"])
+def refresh():
+    if request.method == "POST":
+        data = request.get_json()
+        refresh_token = data.get('refresh_token')
+
+        if not refresh_token:
+            return jsonify({'error': 'Refresh token is missing'}), 401
+
+        try:
+            data = jwt.decode(refresh_token, refresh_secret, algorithms=['HS256'])
+
+            # Generate a new access token
+            new_access_token = jwt.encode({
+                'id': data['id'],
+                'exp': datetime.now() + timedelta(days=2)
+            }, secret, algorithm='HS256')
+
+            return jsonify({'access_token': new_access_token})
+        except jwt.ExpiredSignatureError:
+            return jsonify({'error': 'Refresh token has expired'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'error': 'Refresh token is invalid'}), 401
+
+
+
+
+
+
+
+

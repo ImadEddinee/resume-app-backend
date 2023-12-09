@@ -48,3 +48,5 @@ def create_or_update_basic_info_details(basic_info, user_id):
                                user_id=user_id)
         db.session.add(basic_info_db)
     db.session.commit()
+
+

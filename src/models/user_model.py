@@ -1,5 +1,5 @@
 from database import db, Base
-from sqlalchemy import Column, Integer, Table, ForeignKey
+from sqlalchemy import Column, Integer, Table, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 
 
@@ -15,4 +15,10 @@ class User(Base):
     username = db.Column(db.String(180), unique=True)
     password = db.Column(db.String(220))
     email = db.Column(db.String(120), unique=True)
-    has_account = db.Column(db.Integer)
+    is_intern = db.Column(Boolean)
+    is_extern = db.Column(Boolean)
+    has_resume = db.Column(Boolean)
+    enabled = db.Column(Boolean, default=True)
+    reset_code = db.Column(db.String(180))
+    reset_code_expiration = db.Column(db.String(180))
+    roles = relationship('Role', secondary=user_roles, back_populates='users')
