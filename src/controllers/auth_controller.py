@@ -179,7 +179,33 @@ def refresh():
             return jsonify({'error': 'Refresh token is invalid'}), 401
 
 
+@auth_controller.route('/change-password', methods=['POST'])
+def change_password():
+    email = request.json.get('email')
+    new_password = request.json.get('newPassword')
+    confirm_new_password = request.json.get('confirmNewPassword')
+    reset_code = request.json.get('resetCode')
 
+    # Find the user by email
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    # Verify the reset code and check if it is still valid
+    if user.reset_code == reset_code and datetime.strptime(user.reset_code_expiration, '%Y-%m-%d %H:%M:%S.%f') > datetime.utcnow():
+        # Check if the new password and confirmation match
+
+        if new_password == confirm_new_password:
+            # Update the user's password
+            user.password = generate_password_hash(new_password)
+            user.reset_code = None  # Clear the reset code
+            user.reset_code_expiration = None  # Clear the reset code expiration
+            db.session.commit()
+            return jsonify({"message": "Password changed successfully"}), 200
+        else:
+            return jsonify({"message": "New password and confirmation do not match"}), 400
+    else:
+        return jsonify({"message": "Invalid reset code"}), 400
 
 
 

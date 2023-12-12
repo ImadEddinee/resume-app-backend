@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from database import db, Base
 from sqlalchemy import Column, Integer, Table, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
@@ -21,4 +23,6 @@ class User(Base):
     enabled = db.Column(Boolean, default=True)
     reset_code = db.Column(db.String(180))
     reset_code_expiration = db.Column(db.String(180))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     roles = relationship('Role', secondary=user_roles, back_populates='users')

@@ -22,26 +22,25 @@ app = Flask(__name__)
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 465
 app.config['MAIL_USE_SSL'] = True
-app.config['MAIL_USERNAME'] = "imadhajali66@gmail.com"
-app.config['MAIL_PASSWORD'] = "nisx bkzl gxke qcop"
+app.config['MAIL_USERNAME'] = "hajaliimadeddine@gmail.com"
+app.config['MAIL_PASSWORD'] = "jrwh oifm tixt eldu"
 mail = Mail(app)
 
 
 def send_email(recipient, reset_code):
     with app.app_context():
         msg = Message("Password Reset Code", recipients=[recipient])
-        msg.body = f"Your password reset code is: {reset_code}"
-        msg.sender = 'imadhajali66@gmail.com'
+        msg.body = f"http://localhost:4200/password-reset?reset-code={reset_code}"
+        msg.sender = 'hajaliimadeddine@gmail.com'
         mail.send(msg)
 
 CORS(app)
 
 def generate_reset_code():
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=6))
+    return ''.join(random.choices(string.digits, k=6))
 
 @auth_controller.route('/reset-password', methods=['POST'])
 def request_password_reset():
-    print(12)
     email = request.json.get('email')
 
     # Find the user by email

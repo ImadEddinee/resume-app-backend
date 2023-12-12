@@ -1,6 +1,11 @@
+from datetime import datetime, timedelta
+
 from flask import Blueprint, jsonify, request
 from flask_bcrypt import generate_password_hash
+from sqlalchemy import and_
+
 from database import db
+from src.controllers.auth_controller import auth_required
 from src.controllers.basic_info_controller import get_user_basic_info, create_or_update_basic_info_details
 from src.controllers.contact_controller import get_user_contact, create_or_update_contact_details
 from src.controllers.education_controller import get_user_education, create_or_update_education_details
@@ -39,13 +44,27 @@ def create_or_update_user_resume_details(user_id):
 
 @user_controller.route("users", methods=['GET'])
 def users_details():
+    pass
+
+
+@user_controller.route("users/count", methods=['GET'])
+@auth_required
+def users_count():
     user_type = request.args.get('type')
     if user_type == 'intern':
-        users_count = User.query.filter_by(is_intern=1).count()
+        users_count = User.query.filter(and_(User.is_intern == 1, User.has_resume == 1)).count()
     elif user_type == 'extern':
-        users_count = User.query.filter_by(is_extern=1).count()
+        users_count = User.query.filter(and_(User.is_extern == 1, User.has_resume == 1)).count()
     elif user_type == 'all':
         users_count = User.query.filter_by(has_resume=1).count()
+    elif user_type == 'intern_profiles':
+        users_count = User.query.filter_by(is_intern=1).count()
+    elif user_type == 'modified':
+        one_week_ago = datetime.utcnow() - timedelta(days=7)
+        users_count = User.query.filter(
+            User.has_resume == 1,
+            (User.created_at >= one_week_ago) | (User.updated_at >= one_week_ago)
+        ).count()
     else:
         users_count = 0
     return str(users_count)
@@ -57,9 +76,9 @@ def init_data():
 
     # Create a user and associate roles
     new_user = User(
-        username='example_user',
+        username='imad',
         password= generate_password_hash("123456"),
-        email='example@email.com',
+        email='imad.essa20@gmail.com',
         is_intern=1,
         is_extern=0,
         has_resume=1,
