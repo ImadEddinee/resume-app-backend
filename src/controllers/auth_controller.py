@@ -97,7 +97,10 @@ def login_info_api():
     if user:
         roles = [role.to_dict() for role in user.roles]
         response_data = {
+            'id': user.id,
             'username': user.username,
+            'email': user.email,
+            'currentPosition': user.current_position,
             'enabled': user.enabled,
             'roles': roles  # Assuming user.roles is a list of roles
         }

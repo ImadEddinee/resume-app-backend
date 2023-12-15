@@ -1,8 +1,11 @@
+import os
+import uuid
 from datetime import datetime, timedelta
 
-from flask import Blueprint, jsonify, request
-from flask_bcrypt import generate_password_hash
+from flask import Blueprint, jsonify, request, send_file, send_from_directory
+from flask_bcrypt import generate_password_hash, check_password_hash
 from sqlalchemy import and_
+from werkzeug.utils import secure_filename
 
 from database import db
 from src.controllers.auth_controller import auth_required
@@ -16,6 +19,7 @@ from src.models.role_model import Role
 from src.models.user_model import User
 
 user_controller = Blueprint('user_controller', __name__)
+SEPERATOR = "keybr"
 
 
 @user_controller.route("users/<int:user_id>")
@@ -43,8 +47,35 @@ def create_or_update_user_resume_details(user_id):
 
 
 @user_controller.route("users", methods=['GET'])
+@auth_required
 def users_details():
-    pass
+    user_type = request.args.get('type')
+    if user_type == 'extern':
+        users = User.query.filter(and_(User.is_extern == 1, User.has_resume == 1)).all()
+        # Convert User objects to dictionaries
+        users_data = []
+        for user in users:
+            user_dict = {
+                'id': user.id,
+                'resume': user.resume,
+                'createdAt': user.created_at
+            }
+            users_data.append(user_dict)
+
+        return jsonify({'users': users_data})
+    else:
+        # Handle other cases if needed
+        return jsonify({'message': 'Invalid user_type'})
+
+
+@user_controller.route('users/download/<int:user_id>', methods=['GET'])
+def download_resume(user_id):
+    user = User.query.filter_by(id=user_id).first()
+    resume_path = user.resume
+    vqr = os.getcwd() + "\\resumes\\"
+    print(vqr)
+    print(resume_path)
+    return send_from_directory(vqr, resume_path)
 
 
 @user_controller.route("users/count", methods=['GET'])
@@ -69,6 +100,77 @@ def users_count():
         users_count = 0
     return str(users_count)
 
+
+@user_controller.route('upload-resumes', methods=['POST'])
+def upload_resumes():
+    # Get the current working directory (where the script is executed)
+    current_directory = os.getcwd()
+
+    # Create a folder named 'resumes' in the current directory if it doesn't exist
+    resumes_folder = os.path.join(current_directory, 'resumes')
+    if not os.path.exists(resumes_folder):
+        os.makedirs(resumes_folder)
+
+    # Get the list of uploaded files
+    uploaded_files = request.files.getlist('resumes')
+    print(uploaded_files)
+
+    # Save each file to the 'resumes' folder with a unique name using uuid
+    file_paths = []
+    for file in uploaded_files:
+        # Generate a unique filename using uuid
+        unique_name = str(uuid.uuid4()) + SEPERATOR + file.filename
+        unique_filename = os.path.join(resumes_folder, unique_name)
+        file.save(unique_filename)
+        file_paths.append(unique_name)
+
+    for path in file_paths:
+        new_user = User(
+            is_intern=0,
+            is_extern=1,
+            has_resume=1,
+            enabled=0,
+            resume=path
+        )
+        db.session.add(new_user)
+
+    db.session.commit()
+
+    return jsonify({'message': 'Resumes uploaded successfully'})
+
+
+@user_controller.route("users", methods=['POST'])
+def update_user():
+    data = request.get_json()
+    print(data)
+    user = User.query.get(data['id'])
+    # Check which fields are present in the request and update accordingly
+    if 'username' in data:
+        username = data['username']
+        user.username = username
+
+    if 'email' in data:
+        email = data['email']
+        user.email = email
+
+    if 'currentPosition' in data:
+        current_position = data['currentPosition']
+        user.current_position = current_position
+
+    if 'oldPassword' in data and 'newPassword' in data:
+        old_password = data['oldPassword']
+        new_password = data['newPassword']
+        if check_password_hash(user.password, old_password):
+            user.password = generate_password_hash(new_password)
+        else:
+            return jsonify({"error": "Incorrect old password"}), 400
+
+    db.session.add(user)
+    db.session.commit()
+    # Return a response indicating success or failure
+    return jsonify({"message": "User updated successfully"})
+
+
 @user_controller.route("initializer")
 def init_data():
     admin_role = Role(name='admin')
@@ -77,8 +179,9 @@ def init_data():
     # Create a user and associate roles
     new_user = User(
         username='imad',
-        password= generate_password_hash("123456"),
+        password=generate_password_hash("123456"),
         email='imad.essa20@gmail.com',
+        current_position='Human Resources Manager',
         is_intern=1,
         is_extern=0,
         has_resume=1,
