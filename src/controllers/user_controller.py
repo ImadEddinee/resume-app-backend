@@ -1,3 +1,4 @@
+import base64
 import os
 import uuid
 from datetime import datetime, timedelta
@@ -15,6 +16,8 @@ from src.controllers.education_controller import get_user_education, create_or_u
 from src.controllers.experience_controller import get_user_experience, create_or_update_experience_details
 from src.controllers.language_controller import get_user_language, create_or_update_language_details
 from src.controllers.skill_controller import get_user_skills, create_or_update_skill_details
+from src.models.basic_info_model import BasicInfo
+from src.models.contact_model import Contact
 from src.models.role_model import Role
 from src.models.user_model import User
 
@@ -24,6 +27,7 @@ SEPERATOR = "keybr"
 
 @user_controller.route("users/<int:user_id>")
 def get_user_resume_details(user_id):
+    print(user_id)
     user_data = {
         "basicInfo": get_user_basic_info(user_id),
         "contactInfo": get_user_contact(user_id),
@@ -32,6 +36,7 @@ def get_user_resume_details(user_id):
         "experienceInfo": get_user_experience(user_id),
         "languageInfo": get_user_language(user_id)
     }
+    print(jsonify(user_data))
     return jsonify(user_data)
 
 
@@ -44,6 +49,12 @@ def create_or_update_user_resume_details(user_id):
     create_or_update_experience_details(request.json['experienceInfo'], user_id)
     create_or_update_language_details(request.json['languageInfo'], user_id)
     return 'Done'
+
+
+@user_controller.route("users/<int:user_id>/current-position")
+def get_user_occupation(user_id):
+    basic_info = BasicInfo.query.filter_by(user_id=user_id).first()
+    return jsonify({'currentPosition': basic_info.occupation})
 
 
 @user_controller.route("users", methods=['GET'])
@@ -59,6 +70,25 @@ def users_details():
                 'id': user.id,
                 'resume': user.resume,
                 'createdAt': user.created_at
+            }
+            users_data.append(user_dict)
+
+        return jsonify({'users': users_data})
+
+    if user_type == 'intern':
+        users = User.query.filter_by(is_intern=1).all()
+        # Convert User objects to dictionaries
+        users_data = []
+        for user in users:
+            basic_info = BasicInfo.query.filter_by(user_id=user.id).first()
+            contact = Contact.query.filter_by(user_id=user.id).first()
+            user_dict = {
+                'id': user.id,
+                "firstName": basic_info.first_name if basic_info else "-",
+                "lastName": basic_info.last_name if basic_info else "-",
+                "occupation": basic_info.occupation if basic_info else "-",
+                "email": contact.email if contact else "-",
+                "phoneNumber": contact.phone_number if contact else "-"
             }
             users_data.append(user_dict)
 
@@ -144,6 +174,7 @@ def update_user():
     data = request.get_json()
     print(data)
     user = User.query.get(data['id'])
+    basic_info = BasicInfo.query.filter_by(user_id=data['id']).first()
     # Check which fields are present in the request and update accordingly
     if 'username' in data:
         username = data['username']
@@ -155,7 +186,7 @@ def update_user():
 
     if 'currentPosition' in data:
         current_position = data['currentPosition']
-        user.current_position = current_position
+        basic_info.occupation = current_position
 
     if 'oldPassword' in data and 'newPassword' in data:
         old_password = data['oldPassword']
@@ -166,9 +197,53 @@ def update_user():
             return jsonify({"error": "Incorrect old password"}), 400
 
     db.session.add(user)
+    db.session.add(basic_info)
     db.session.commit()
     # Return a response indicating success or failure
     return jsonify({"message": "User updated successfully"})
+
+
+@user_controller.route("users/<int:user_id>/picture", methods=['GET'])
+def get_image(user_id):
+    user = User.query.filter_by(id=user_id).first()
+
+
+    images_folder = os.path.join(os.getcwd(), 'images')
+    filename = os.path.join(images_folder, user.profile_picture)
+    print(filename)
+
+
+    return send_file(filename, mimetype='image/jpg')
+
+
+@user_controller.route("users/<int:user_id>/picture", methods=['POST'])
+def upload_profile_picture(user_id):
+    user = User.query.filter_by(id=user_id).first()
+
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'})
+
+    file = request.files['file']
+
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'})
+
+    current_directory = os.getcwd()
+
+    images_folder = os.path.join(current_directory, 'images')
+
+    if not os.path.exists(images_folder):
+        os.makedirs(images_folder)
+
+    if file:
+        unique_name = str(uuid.uuid4()) + SEPERATOR + file.filename
+        unique_filename = os.path.join(images_folder, unique_name)
+        print(unique_filename)
+        file.save(unique_filename)
+        user.profile_picture = unique_filename
+        db.session.commit()
+        return jsonify({'message': 'File uploaded successfully'})
+
 
 
 @user_controller.route("initializer")
@@ -181,7 +256,6 @@ def init_data():
         username='imad',
         password=generate_password_hash("123456"),
         email='imad.essa20@gmail.com',
-        current_position='Human Resources Manager',
         is_intern=1,
         is_extern=0,
         has_resume=1,

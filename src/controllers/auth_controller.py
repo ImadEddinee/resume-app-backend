@@ -100,7 +100,6 @@ def login_info_api():
             'id': user.id,
             'username': user.username,
             'email': user.email,
-            'currentPosition': user.current_position,
             'enabled': user.enabled,
             'roles': roles  # Assuming user.roles is a list of roles
         }
@@ -197,7 +196,7 @@ def change_password():
     # Verify the reset code and check if it is still valid
     if user.reset_code == reset_code and datetime.strptime(user.reset_code_expiration, '%Y-%m-%d %H:%M:%S.%f') > datetime.utcnow():
         # Check if the new password and confirmation match
-
+        print(new_password,confirm_new_password)
         if new_password == confirm_new_password:
             # Update the user's password
             user.password = generate_password_hash(new_password)
@@ -206,7 +205,7 @@ def change_password():
             db.session.commit()
             return jsonify({"message": "Password changed successfully"}), 200
         else:
-            return jsonify({"message": "New password and confirmation do not match"}), 400
+            return jsonify({"error": "New password and confirmation do not match"}), 401
     else:
         return jsonify({"message": "Invalid reset code"}), 400
 

@@ -1,5 +1,5 @@
 from database import db
-from sqlalchemy import ForeignKey, Date
+from sqlalchemy import ForeignKey, Date, LargeBinary
 
 
 class BasicInfo(db.Model):
@@ -12,4 +12,5 @@ class BasicInfo(db.Model):
     occupation = db.Column(db.String(150))
     years_of_exp = db.Column(db.Integer)
     birth_date = db.Column(db.String(150))
+    picture = db.Column(db.String(255))
     user_id = db.Column(db.Integer, ForeignKey('user.id'), nullable=False)

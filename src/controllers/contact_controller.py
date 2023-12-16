@@ -17,7 +17,8 @@ def get_user_contact(user_id):
             "address": contact.address,
             "github": contact.github,
             "linkedin": contact.linkedin,
-            "email": contact.email
+            "email": contact.email,
+            "phoneNumber": contact.phone_number,
         }
     return contact_info
 
@@ -26,15 +27,17 @@ def get_user_contact(user_id):
 def create_or_update_contact_details(contact, user_id):
     contact_db = Contact.query.filter_by(user_id=user_id).first()
     if contact_db:
-        contact_db.address = contact['address']
-        contact_db.github = contact['github']
-        contact_db.linkedin = contact['linkedin']
-        contact_db.email = contact['email']
+        contact_db.address = contact.get('address', contact_db.address)
+        contact_db.github = contact.get('github', contact_db.github)
+        contact_db.linkedin = contact.get('linkedin', contact_db.linkedin)
+        contact_db.email = contact.get('email', contact_db.email)
+        contact_db.phone_number = contact.get('phoneNumber', contact_db.phone_number)
     else:
-        contact_db = Contact(address=contact['address'],
-                             linkedin=contact['linkedin'],
-                             github=contact['github'],
-                             email=contact['email'],
+        contact_db = Contact(address=contact.get('address'),
+                             linkedin=contact.get('linkedin'),
+                             github=contact.get('github'),
+                             email=contact.get('email'),
+                             phone_number=contact.get('phoneNumber'),
                              user_id=user_id)
         db.session.add(contact_db)
     db.session.commit()

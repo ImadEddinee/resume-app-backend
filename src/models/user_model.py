@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from database import db, Base
-from sqlalchemy import Column, Integer, Table, ForeignKey, Boolean, LargeBinary
+from sqlalchemy import Column, Integer, Table, ForeignKey, Boolean, LargeBinary, BLOB
 from sqlalchemy.orm import relationship
 
 
@@ -17,11 +17,11 @@ class User(Base):
     username = db.Column(db.String(180), unique=True)
     password = db.Column(db.String(220))
     email = db.Column(db.String(120), unique=True)
-    current_position = db.Column(db.String(120))
     is_intern = db.Column(Boolean)
     is_extern = db.Column(Boolean)
     has_resume = db.Column(Boolean)
     resume = db.Column(db.String(220))
+    profile_picture = db.Column(db.String(220))
     enabled = db.Column(Boolean, default=True)
     reset_code = db.Column(db.String(180))
     reset_code_expiration = db.Column(db.String(180))
