@@ -2,7 +2,9 @@ import base64
 import os
 import uuid
 from datetime import datetime, timedelta
+from io import BytesIO
 
+import pandas as pd
 from flask import Blueprint, jsonify, request, send_file, send_from_directory
 from flask_bcrypt import generate_password_hash, check_password_hash
 from sqlalchemy import and_
@@ -18,7 +20,10 @@ from src.controllers.language_controller import get_user_language, create_or_upd
 from src.controllers.skill_controller import get_user_skills, create_or_update_skill_details
 from src.models.basic_info_model import BasicInfo
 from src.models.contact_model import Contact
+from src.models.education_model import Education
+from src.models.experience_model import Experience
 from src.models.role_model import Role
+from src.models.skill_model import Skill
 from src.models.user_model import User
 
 user_controller = Blueprint('user_controller', __name__)
@@ -245,6 +250,187 @@ def upload_profile_picture(user_id):
         return jsonify({'message': 'File uploaded successfully'})
 
 
+@user_controller.route('/users/occupations', methods=['POST'])
+def get_internal_users_based_on_position():
+    try:
+        data = request.get_json()
+
+        # Assuming 'selectedPosts' is a list of selected positions
+        selected_posts = data.get('selectedPosts', [])
+
+        print(selected_posts)
+
+        # Query users based on the selected positions
+        users = db.session.query(User).join(BasicInfo).filter(BasicInfo.occupation.in_(selected_posts)).all()
+        print(users)
+        # You can customize the response based on your needs
+        user_list = []
+        for user in users:
+            basic_info = BasicInfo.query.filter_by(user_id=user.id).first()
+            contact = Contact.query.filter_by(user_id=user.id).first()
+            user_dict = {
+                'id': user.id,
+                "firstName": basic_info.first_name if basic_info else "-",
+                "lastName": basic_info.last_name if basic_info else "-",
+                "occupation": basic_info.occupation if basic_info else "-",
+                "email": contact.email if contact else "-",
+                "phoneNumber": contact.phone_number if contact else "-"
+            }
+            user_list.append(user_dict)
+
+        return jsonify({'users': user_list}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@user_controller.route('/users/skills', methods=['POST'])
+def get_internal_users_based_on_skills():
+    try:
+        data = request.get_json()
+
+        # Assuming 'selectedPosts' is a list of selected positions
+        selected_skills = data.get('skills', [])
+
+        print(selected_skills)
+
+        # Query users based on the selected positions
+        users = db.session.query(User).join(Skill).filter(Skill.name.in_(selected_skills)).all()
+
+        # You can customize the response based on your needs
+        user_list = []
+        for user in users:
+            basic_info = BasicInfo.query.filter_by(user_id=user.id).first()
+            contact = Contact.query.filter_by(user_id=user.id).first()
+            user_dict = {
+                'id': user.id,
+                "firstName": basic_info.first_name if basic_info else "-",
+                "lastName": basic_info.last_name if basic_info else "-",
+                "occupation": basic_info.occupation if basic_info else "-",
+                "email": contact.email if contact else "-",
+                "phoneNumber": contact.phone_number if contact else "-"
+            }
+            user_list.append(user_dict)
+
+        return jsonify({'users': user_list}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@user_controller.route('/users/degree-title', methods=['POST'])
+def get_internal_users_based_on_education():
+    try:
+        data = request.get_json()
+
+        # Assuming 'selectedPosts' is a list of selected positions
+        selected_degree_titles = data.get('degreeTitle', [])
+
+        print(selected_degree_titles)
+
+        # Query users based on the selected positions
+        users = db.session.query(User).join(Education).filter(Education.degree_title.in_(selected_degree_titles)).all()
+
+        # You can customize the response based on your needs
+        user_list = []
+        for user in users:
+            basic_info = BasicInfo.query.filter_by(user_id=user.id).first()
+            contact = Contact.query.filter_by(user_id=user.id).first()
+            user_dict = {
+                'id': user.id,
+                "firstName": basic_info.first_name if basic_info else "-",
+                "lastName": basic_info.last_name if basic_info else "-",
+                "occupation": basic_info.occupation if basic_info else "-",
+                "email": contact.email if contact else "-",
+                "phoneNumber": contact.phone_number if contact else "-"
+            }
+            user_list.append(user_dict)
+
+        return jsonify({'users': user_list}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+
+@user_controller.route('/users/project-name', methods=['POST'])
+def get_internal_users_based_on_project_name():
+    try:
+        data = request.get_json()
+
+        # Assuming 'selectedPosts' is a list of selected positions
+        selected_project_name = data.get('projectName', [])
+
+        print(selected_project_name)
+
+        # Query users based on the selected positions
+        users = db.session.query(User).join(Experience).filter(Experience.project_name.in_(selected_project_name)).all()
+
+        # You can customize the response based on your needs
+        user_list = []
+        for user in users:
+            basic_info = BasicInfo.query.filter_by(user_id=user.id).first()
+            contact = Contact.query.filter_by(user_id=user.id).first()
+            user_dict = {
+                'id': user.id,
+                "firstName": basic_info.first_name if basic_info else "-",
+                "lastName": basic_info.last_name if basic_info else "-",
+                "occupation": basic_info.occupation if basic_info else "-",
+                "email": contact.email if contact else "-",
+                "phoneNumber": contact.phone_number if contact else "-"
+            }
+            user_list.append(user_dict)
+
+        return jsonify({'users': user_list}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+
+@user_controller.route('/users/excel-data', methods=['POST'])
+def export_excel_data():
+    try:
+        data = request.get_json()
+
+        # Assuming 'selectedPosts' is a list of selected positions
+        selected_ids = data.get('ids', [])
+
+        print(selected_ids)
+
+        users = db.session.query(User).filter(User.id.in_(selected_ids)).all()
+
+        print(users)
+
+        # Create a Pandas DataFrame from the user data
+        user_data = {
+            "ID": [user.id for user in users],
+            "username": [user.username for user in users],
+            "Email": [user.email for user in users],
+        }
+
+        df = pd.DataFrame(user_data)
+
+        # Create an in-memory Excel file
+        excel_output = BytesIO()
+
+        with pd.ExcelWriter(excel_output, engine='xlsxwriter') as writer:
+            df.to_excel(writer, sheet_name='User Data', index=False)
+
+        excel_output.seek(0)
+
+        # Send the Excel file back to the frontend
+        return send_file(
+            excel_output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name='user_data.xlsx'
+        )
+
+    except Exception as e:
+        print(e)
+        return jsonify({"error": "An error occurred while processing the request"}), 500
+
 
 @user_controller.route("initializer")
 def init_data():
@@ -258,10 +444,158 @@ def init_data():
         email='imad.essa20@gmail.com',
         is_intern=1,
         is_extern=0,
-        has_resume=1,
+        enabled=1,
         roles=[admin_role, user_role]  # Associate roles with the user
     )
 
     db.session.add(new_user)
     db.session.commit()
+
+    # Access the user's ID
+    user_id = new_user.id
+
+    # Create BasicInfo instance and associate it with the user
+    new_basic_info = BasicInfo(
+        first_name="imad",
+        last_name="eddine",
+        age=20,
+        occupation="Dev",
+        user_id=user_id
+    )
+
+    db.session.add(new_basic_info)
+    db.session.commit()
+
+    new_contact = Contact(
+        email="imad@gmail.com",
+        phone_number="0876384768",
+        user_id=user_id
+    )
+
+    db.session.add(new_contact)
+    db.session.commit()
+
+    new_skill = Skill(
+        name="Java",
+        user_id=user_id
+    )
+
+    db.session.add(new_skill)
+    db.session.commit()
+
+    new_education = Education(
+        degree_title="Licence",
+        user_id=user_id
+    )
+
+    db.session.add(new_education)
+    db.session.commit()
+
+    new_education = Education(
+        degree_title="Master",
+        user_id=user_id
+    )
+
+    db.session.add(new_education)
+    db.session.commit()
+
+    new_experience = Experience(
+        project_name="Forewriter",
+        user_id=user_id
+    )
+
+    db.session.add(new_experience)
+    db.session.commit()
+
+    new_experience = Experience(
+        project_name="Portnet",
+        user_id=user_id
+    )
+
+    db.session.add(new_experience)
+    db.session.commit()
+
+    # """""""""""""""""""""""""""""""""""""""""""""""""
+
+    admin_role = Role(name='admin')
+    user_role = Role(name='user')
+
+    # Create a user and associate roles
+    new_user = User(
+        username='amine',
+        password=generate_password_hash("123456"),
+        email='email@gmail.com',
+        is_intern=1,
+        is_extern=0,
+        enabled=1,
+        roles=[admin_role, user_role]  # Associate roles with the user
+    )
+
+    db.session.add(new_user)
+    db.session.commit()
+
+    # Access the user's ID
+    user_id = new_user.id
+
+    # Create BasicInfo instance and associate it with the user
+    new_basic_info = BasicInfo(
+        first_name="imad",
+        last_name="eddine",
+        age=20,
+        occupation="Manager",
+        user_id=user_id
+    )
+
+    db.session.add(new_basic_info)
+    db.session.commit()
+
+    new_contact = Contact(
+        email="amine@gmail.com",
+        phone_number="0976384768",
+        user_id=user_id
+    )
+
+    db.session.add(new_contact)
+    db.session.commit()
+
+    new_skill = Skill(
+        name="PHP",
+        user_id=user_id
+    )
+
+    db.session.add(new_skill)
+    db.session.commit()
+
+    new_education = Education(
+        degree_title="Licence",
+        user_id=user_id
+    )
+
+    db.session.add(new_education)
+    db.session.commit()
+
+    new_education = Education(
+        degree_title="Master",
+        user_id=user_id
+    )
+
+    db.session.add(new_education)
+    db.session.commit()
+
+    new_education = Education(
+        degree_title="Ingénieur",
+        user_id=user_id
+    )
+
+    db.session.add(new_education)
+    db.session.commit()
+
+    new_experience = Experience(
+        project_name="Forewriter",
+        user_id=user_id
+    )
+
+    db.session.add(new_experience)
+    db.session.commit()
+
     return "Data Initialized"

@@ -8,6 +8,7 @@ class Experience(db.Model):
     __tablename__ = 'experience'
     id = db.Column(db.Integer, primary_key=True)
     job_title = db.Column(db.String(150))
+    project_name = db.Column(db.String(150))
     company = db.Column(db.String(150))
     starting_year = db.Column(db.String(150))
     ongoing = db.Column(db.Integer)

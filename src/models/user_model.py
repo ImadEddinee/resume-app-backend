@@ -22,7 +22,7 @@ class User(Base):
     has_resume = db.Column(Boolean)
     resume = db.Column(db.String(220))
     profile_picture = db.Column(db.String(220))
-    enabled = db.Column(Boolean, default=True)
+    enabled = db.Column(Boolean, default=False)
     reset_code = db.Column(db.String(180))
     reset_code_expiration = db.Column(db.String(180))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

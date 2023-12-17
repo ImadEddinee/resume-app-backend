@@ -131,29 +131,31 @@ def login():
         password = data['password']
 
         user = User.query.filter_by(username=username).first()
-
         if user:
-            if check_password_hash(user.password, password):
-                # Generate access token
-                access_token = jwt.encode({
-                    'sub': user.id,
-                    'id': user.id,
-                    'username': user.username,
-                    'email': user.email,
-                    'exp': datetime.now() + timedelta(days=2)
-                }, secret, algorithm='HS256')
+            if user.enabled:
+                if check_password_hash(user.password, password):
+                    # Generate access token
+                    access_token = jwt.encode({
+                        'sub': user.id,
+                        'id': user.id,
+                        'username': user.username,
+                        'email': user.email,
+                        'exp': datetime.now() + timedelta(days=2)
+                    }, secret, algorithm='HS256')
 
-                # Generate refresh token
-                refresh_token = jwt.encode({
-                    'id': user.id,
-                    'exp': datetime.now() + timedelta(days=30)
-                }, refresh_secret, algorithm='HS256')
+                    # Generate refresh token
+                    refresh_token = jwt.encode({
+                        'id': user.id,
+                        'exp': datetime.now() + timedelta(days=30)
+                    }, refresh_secret, algorithm='HS256')
 
-                return jsonify({'accessToken': access_token, 'refreshToken': refresh_token})
+                    return jsonify({'accessToken': access_token, 'refreshToken': refresh_token})
+                else:
+                    return jsonify({'error': 'Mot de passe est incorrect.'}), 401
             else:
-                return jsonify({'error': 'Invalid username or password'}), 401
+                return jsonify({'error': 'Le compte est désactivé.'}), 401
         else:
-            return jsonify({'error': 'Invalid username or password'}), 401
+            return jsonify({'error': 'Nom d\'utilisateur est incorrect.'}), 401
 
 
 @auth_controller.route("/refresh", methods=["POST"])
