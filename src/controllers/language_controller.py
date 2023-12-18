@@ -12,7 +12,7 @@ language_controller = Blueprint('language_controller', __name__)
 def get_user_language(user_id):
     languages = Language.query.filter_by(user_id=user_id).all()
     if not languages:
-        return {}
+        return []
     else:
         language_info = [
             {

@@ -25,7 +25,7 @@ def get_user_basic_info(user_id):
             "occupation": basic_info.occupation,
             "yearsOfExp": basic_info.years_of_exp,
             "birthDate": basic_info.birth_date,
-            "picture": basic_info.picture,
+            "picture": basic_info.resume_picture,
             "userId": user_id,
         }
     return basic_info_dict

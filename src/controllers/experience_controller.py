@@ -29,6 +29,7 @@ def get_user_experience(user_id):
             experience_info.append({
                 "id": exp.id,
                 "jobTitle": exp.job_title,
+                "internJobTitle": exp.project_name,
                 "company": exp.company,
                 "startingYear": exp.starting_year,
                 "onGoing": exp.ongoing,

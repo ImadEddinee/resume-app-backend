@@ -7,7 +7,7 @@ from io import BytesIO
 import pandas as pd
 from flask import Blueprint, jsonify, request, send_file, send_from_directory
 from flask_bcrypt import generate_password_hash, check_password_hash
-from sqlalchemy import and_
+from sqlalchemy import and_, func
 from werkzeug.utils import secure_filename
 
 from database import db
@@ -118,11 +118,11 @@ def download_resume(user_id):
 def users_count():
     user_type = request.args.get('type')
     if user_type == 'intern':
-        users_count = User.query.filter(and_(User.is_intern == 1, User.has_resume == 1)).count()
+        users_count = User.query.filter_by(is_intern=1).count()
     elif user_type == 'extern':
-        users_count = User.query.filter(and_(User.is_extern == 1, User.has_resume == 1)).count()
+        users_count = User.query.filter_by(is_extern=1).count()
     elif user_type == 'all':
-        users_count = User.query.filter_by(has_resume=1).count()
+        users_count = User.query.count()
     elif user_type == 'intern_profiles':
         users_count = User.query.filter_by(is_intern=1).count()
     elif user_type == 'modified':
@@ -134,6 +134,56 @@ def users_count():
     else:
         users_count = 0
     return str(users_count)
+
+
+@user_controller.route('users/chart', methods=['POST'])
+def get_data_for_chart():
+
+    chart_entry_formation = request.json.get('educationFormation', [])
+    chart_entry_position = request.json.get('positions', [])
+    chart_entry_skills = request.json.get('skills', [])
+
+    print(chart_entry_formation,chart_entry_position,chart_entry_skills)
+
+    education_counts = (
+        Education.query
+        .filter(Education.degree_title.in_(chart_entry_formation))
+        .group_by(Education.degree_title)
+        .with_entities(Education.degree_title, func.count().label('count'))
+        .all()
+    )
+
+    formation_result = [{"degree_title": entry.degree_title, "count": entry.count} for entry in education_counts]
+
+    position_counts = (
+        BasicInfo.query
+        .filter(BasicInfo.occupation.in_(chart_entry_position))
+        .group_by(BasicInfo.occupation)
+        .with_entities(BasicInfo.occupation, func.count().label('count'))
+        .all()
+    )
+
+    position_result = [{"position_title": entry.occupation, "count": entry.count} for entry in position_counts]
+
+    skill_counts = (
+        Skill.query
+        .filter(Skill.name.in_(chart_entry_skills))
+        .group_by(Skill.name)
+        .with_entities(Skill.name, func.count().label('count'))
+        .all()
+    )
+
+    skill_result = [{"skill_title": entry.name, "count": entry.count} for entry in skill_counts]
+
+
+    return jsonify({
+        "formation": formation_result,
+        "position": position_result,
+        "skill": skill_result
+    })
+
+
+
 
 
 @user_controller.route('upload-resumes', methods=['POST'])
@@ -168,6 +218,54 @@ def upload_resumes():
             resume=path
         )
         db.session.add(new_user)
+
+    db.session.commit()
+
+    return jsonify({'message': 'Resumes uploaded successfully'})
+
+
+
+@user_controller.route('upload-resumes/interns', methods=['POST'])
+def upload_resumes_for_interns():
+    # Get the current working directory (where the script is executed)
+    current_directory = os.getcwd()
+
+    # Create a folder named 'resumes' in the current directory if it doesn't exist
+    resumes_folder = os.path.join(current_directory, 'resumes')
+    if not os.path.exists(resumes_folder):
+        os.makedirs(resumes_folder)
+
+    # Get the list of uploaded files
+    uploaded_files = request.files.getlist('resumes')
+    print(uploaded_files)
+
+    # Save each file to the 'resumes' folder with a unique name using uuid
+    file_paths = []
+    for file in uploaded_files:
+        # Generate a unique filename using uuid
+        unique_name = str(uuid.uuid4()) + SEPERATOR + file.filename
+        unique_filename = os.path.join(resumes_folder, unique_name)
+        file.save(unique_filename)
+        file_paths.append(unique_name)
+
+    for path in file_paths:
+        new_user = User(
+            is_intern=1,
+            is_extern=0,
+            has_resume=1,
+            enabled=0,
+            resume=path
+        )
+        db.session.add(new_user)
+        db.session.commit()
+
+        new_basic_info = BasicInfo(
+            first_name=path.split("keybr")[1],
+            occupation="Dev",
+            user_id=new_user.id
+        )
+        db.session.add(new_basic_info)
+        db.session.commit()
 
     db.session.commit()
 
