@@ -140,7 +140,7 @@ def login():
                         'id': user.id,
                         'username': user.username,
                         'email': user.email,
-                        'exp': datetime.now() + timedelta(days=2)
+                        'exp': datetime.now() + timedelta(days=200)
                     }, secret, algorithm='HS256')
 
                     # Generate refresh token

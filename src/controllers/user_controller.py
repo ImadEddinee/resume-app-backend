@@ -3,7 +3,11 @@ import os
 import uuid
 from datetime import datetime, timedelta
 from io import BytesIO
-
+import nltk
+import spacy
+nltk.download('stopwords')
+spacy.load('en_core_web_sm')
+from pyresparser import ResumeParser
 import pandas as pd
 from flask import Blueprint, jsonify, request, send_file, send_from_directory
 from flask_bcrypt import generate_password_hash, check_password_hash
@@ -245,26 +249,36 @@ def upload_resumes_for_interns():
         # Generate a unique filename using uuid
         unique_name = str(uuid.uuid4()) + SEPERATOR + file.filename
         unique_filename = os.path.join(resumes_folder, unique_name)
+        print(unique_filename)
         file.save(unique_filename)
+        data = ResumeParser(unique_filename).get_extracted_data()
+        print(data)
         file_paths.append(unique_name)
-
-    for path in file_paths:
+        skills = data.get('skills', [])
         new_user = User(
             is_intern=1,
             is_extern=0,
             has_resume=1,
             enabled=0,
-            resume=path
         )
         db.session.add(new_user)
         db.session.commit()
 
         new_basic_info = BasicInfo(
-            first_name=path.split("keybr")[1],
+            first_name=unique_name.split("keybr")[1],
             occupation="Dev",
             user_id=new_user.id
         )
         db.session.add(new_basic_info)
+        db.session.commit()
+
+        for skill_name in skills:
+            new_skill = Skill(
+                name=skill_name,
+                user_id=new_user.id
+            )
+            db.session.add(new_skill)
+
         db.session.commit()
 
     db.session.commit()

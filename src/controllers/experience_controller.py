@@ -14,7 +14,7 @@ experience_controller = Blueprint('experience_controller', __name__)
 def get_user_experience(user_id):
     experiences = Experience.query.filter_by(user_id=user_id).all()
     if not experiences:
-        return {}
+        return []
     else:
         experience_ids = [exp.id for exp in experiences]
         experience_actions = (db.session.query(ExperienceAction)

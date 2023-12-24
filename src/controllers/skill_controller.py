@@ -11,7 +11,7 @@ skill_controller = Blueprint('skill_controller', __name__)
 def get_user_skills(user_id):
     skills = Skill.query.filter_by(user_id=user_id).all()
     if not skills:
-        return {}
+        return []
     else:
         skills_info = [{"id": skill.id, "content": skill.name} for skill in skills]
     return skills_info

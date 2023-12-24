@@ -11,7 +11,7 @@ education_controller = Blueprint('education_controller', __name__)
 def get_user_education(user_id):
     educations = Education.query.filter_by(user_id=user_id).all()
     if not educations:
-        return {}
+        return []
     else:
         education_info = [
             {
